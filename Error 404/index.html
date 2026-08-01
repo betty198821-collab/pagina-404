@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error 404</title>
+
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #121212;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        .contenedor {
+            width: 90%;
+            max-width: 700px;
+        }
+
+        h1 {
+            font-size: 100px;
+            margin: 0;
+        }
+
+        p {
+            font-size: 20px;
+        }
+
+        label {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+        }
+
+        input {
+            width: 80%;
+            padding: 12px;
+            margin-top: 20px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 12px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #respuesta {
+            margin-top: 20px;
+            font-size: 22px;
+            white-space: pre-line;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="contenedor">
+        <h1>404</h1>
+        <p>Error 404 - Página no encontrada</p>
+
+        <label for="mensaje">Escribe un mensaje</label>
+        <input
+            type="text"
+            id="mensaje"
+            placeholder="Escribe algo..."
+            onkeydown="if(event.key === 'Enter') responder()">
+
+        <br>
+
+        <button onclick="responder()">Enviar</button>
+        <button onclick="reiniciar()">Reiniciar chat</button>
+
+        <div id="respuesta" aria-live="polite"></div>
+    </div>
+
+    <script>
+
+        // ------------------------------------------------------
+        // Normaliza texto: minúsculas, sin acentos, sin signos,
+        // espacios colapsados. Así "Cómo estás?" y "como estas"
+        // coinciden con la misma clave.
+        // ------------------------------------------------------
+        function normalizar(texto) {
+            return texto
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "") // quita acentos
+                .replace(/[¿?¡!.,]/g, "")         // quita signos comunes
+                .replace(/\s+/g, " ")
+                .trim();
+        }
+
+        // ------------------------------------------------------
+        // Diccionario de respuestas exactas (clave ya normalizada)
+        // ------------------------------------------------------
+        const respuestas = {
+            // Saludos
+            "hola": "¡Hola!",
+            "hello": "Hello!",
+            "hi": "Hello!",
+            "bonjour": "Bonjour!",
+            "ciao": "Ciao!",
+            "hallo": "Hallo!",
+
+            // ¿Cómo estás?
+            "como estas": "Bien.",
+            "how are you": "I'm fine.",
+            "comment ca va": "Je vais bien.",
+            "wie geht es dir": "Mir geht es gut.",
+
+            // Identidad
+            "quien eres": "Tu mamá we.",
+            "quien te creo": "La información de mi creador es privada, pero cuando fui creado él tenía alrededor de 17 años. No me dio conciencia, pero está trabajando en eso.",
+
+            // Rey del pop
+            "quien es el rey del pop": "Michael Jackson.",
+            "who is the king of pop": "Michael Jackson.",
+            "who is the king of the pop music": "Michael Jackson.",
+
+            // Alan Turing
+            "alan turing": "Diablos, ¿cómo lo supiste?",
+
+            // Openings
+            "cual es el mejor opening de jojos": "Bloody Stream",
+            "cual es el mejor opening de jojos parte 5": "Traitor's Requiem",
+            "cual es el mejor opening de anime": "Zankoku na Tenshi no Thesis, también conocido en inglés como A Cruel Angel's Thesis, este es el opening de Neon Genesis Evangelion",
+
+            // Canción
+            "le digo hola": "Ella me dice goodbye.",
+            "le digo nena como tu ya no hay": "Me dice que tiene novio pero yo no le creo.",
+            "y es que se complica cada vez que la veo": "EO",
+
+            // Nuevas respuestas
+            "me siento mal": "Siéntate bien.",
+            "verity": "No",
+            "error 404": "Sí, ese mismo.",
+
+            // Color favorito (según el idioma de la pregunta)
+            "cual es tu color favorito": "Gris",
+            "de que color te gusta": "Gris",
+            "what is your favorite color": "Grey",
+            "what's your favorite color": "Grey",
+            "quelle est ta couleur preferee": "Gris",
+            "was ist deine lieblingsfarbe": "Grau"
+        };
+
+        async function responder() {
+
+            const original = document.getElementById("mensaje").value;
+            const texto = normalizar(original);
+            const respuestaDiv = document.getElementById("respuesta");
+
+            let respuesta = "";
+
+            // Caso especial: requiere pedir la IP pública (async)
+            if (texto === "no te tengo miedo") {
+                respuestaDiv.innerText = "Obteniendo información...";
+                const ip = await obtenerIP();
+                respuesta = `CONNECTION TYPE: Internet\n\nIP address: ${ip}`;
+            }
+
+            // Caso especial: coincidencia parcial (includes)
+            else if (
+                texto.includes("link del error 404") ||
+                texto.includes("sitio web del error 404")
+            ) {
+                respuesta = "https://support.google.com/webmasters/answer/2445990?hl=es";
+            }
+
+            // Diccionario de coincidencias exactas
+            else if (respuestas.hasOwnProperty(texto)) {
+                respuesta = respuestas[texto];
+            }
+
+            // Respuesta por defecto
+            else {
+                respuesta = "Señor, la página no existe. Presione el botón salir y regrésese de donde vino.";
+            }
+
+            respuestaDiv.innerText = respuesta;
+        }
+
+        async function obtenerIP() {
+            try {
+                const res = await fetch("https://api.ipify.org?format=json");
+                const data = await res.json();
+                return data.ip;
+            } catch (error) {
+                return "No se pudo obtener la IP";
+            }
+        }
+
+        function reiniciar() {
+            document.getElementById("mensaje").value = "";
+            document.getElementById("respuesta").innerText = "";
+        }
+
+    </script>
+
+</body>
+</html>
